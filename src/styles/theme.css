@@ -1,0 +1,104 @@
+/* GORBOY Design System - CSS Variables */
+
+:root {
+  /* Primary Colors */
+  --color-cyber-green: #00ff88;
+  --color-dark-green: #00aa55;
+  --color-bg-dark: #0a0a0a;
+  --color-bg-panel: rgba(0, 20, 10, 0.85);
+  --color-bg-panel-solid: #001a0a;
+
+  /* Accent Colors */
+  --color-danger-red: #ff0040;
+  --color-ice-blue: #00d4ff;
+  --color-neon-pink: #ff00ff;
+  --color-amber: #ffaa00;
+  --color-warning-yellow: #ffd93d;
+
+  /* Text Colors */
+  --color-text-primary: #00ff88;
+  --color-text-secondary: #00aa55;
+  --color-text-muted: rgba(0, 255, 136, 0.6);
+  --color-text-inverted: #0a0a0a;
+
+  /* Fonts */
+  --font-display: "Press Start 2P", "Courier New", monospace;
+  --font-body: "VT323", "Courier New", monospace;
+
+  /* Font Sizes */
+  --text-xs: 8px;
+  --text-sm: 10px;
+  --text-md: 12px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Borders */
+  --border-width: 2px;
+  --border-color: var(--color-cyber-green);
+
+  /* Shadows */
+  --shadow-glow: 0 0 20px rgba(0, 255, 136, 0.3);
+  --shadow-glow-intense: 0 0 40px rgba(0, 255, 136, 0.5);
+  --shadow-button: 0 4px 0 #001a0a;
+
+  /* Transitions */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Z-Index Scale */
+  --z-background: -1;
+  --z-default: 1;
+  --z-panel: 10;
+  --z-modal: 100;
+  --z-overlay: 1000;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: var(--font-display);
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-panel-solid);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-dark-green);
+  border: 1px solid var(--color-cyber-green);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyber-green);
+}
