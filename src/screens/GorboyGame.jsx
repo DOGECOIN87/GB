@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Galaxy from './Galaxy';
 
 export default function GorboyGame() {
-  const [screen, setScreen] = useState('game');
+  const [screen, setScreen] = useState('intro');
   const [introPhase, setIntroPhase] = useState('black');
   const canvasRef = useRef(null);
   const [landscape, setLandscape] = useState(false);
