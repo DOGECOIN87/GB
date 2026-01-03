@@ -281,7 +281,7 @@ export default function GorboyMockup() {
             flexWrap: 'wrap',
             justifyContent: 'center',
           }}>
-            {['START', 'SETTINGS'].map((label, idx) => (
+            {['START', 'SETTINGS', 'CONTROLS'].map((label, idx) => (
               <button
                 key={idx}
                 className="pixel-btn"
@@ -290,6 +290,8 @@ export default function GorboyMockup() {
                     navigate('/game');
                   } else if (label === 'SETTINGS') {
                     navigate('/settings');
+                  } else if (label === 'CONTROLS') {
+                    navigate('/controls');
                   }
                 }}
                 style={{
