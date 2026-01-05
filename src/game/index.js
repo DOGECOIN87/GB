@@ -4,3 +4,5 @@
  */
 
 export { GameEngine } from './GameEngine';
+export { InputManager } from './InputManager';
+export { PlayerShip } from './PlayerShip';
