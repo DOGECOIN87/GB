@@ -149,7 +149,7 @@ export default function GorboyGame() {
   };
 
   const CircularLogo = () => (
-    <img src="circle-logo.webp" className="w-full h-full" alt="Circle Logo" />
+    <img src="infographic-.png" className="w-full h-full" alt="Infographic" />
   );
 
   const SquareLogo = () => (
