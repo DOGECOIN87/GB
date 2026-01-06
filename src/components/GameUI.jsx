@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * GameUI - React component for game HUD and touch controls
- * Requirements: 4.1, 4.2, 4.3, 10.1, 10.2
+ * Identical to the controls shown in the Controls page
  */
 const GameUI = ({ 
   coins = 0, 
@@ -15,142 +15,47 @@ const GameUI = ({
   onSelect
 }) => {
   
-  const MobileButton = ({ label, size = 60, color = '#ff6b6b', onClick, active = false }) => (
+  const MobileArrow = ({ direction, color = '#00ff88' }) => {
+    const rotations = { up: '0deg', down: '180deg', left: '-90deg', right: '90deg' };
+    return (
+      <div style={{
+        width: 0,
+        height: 0,
+        borderLeft: '6px solid transparent',
+        borderRight: '6px solid transparent',
+        borderBottom: `10px solid ${color}`,
+        transform: `rotate(${rotations[direction]})`,
+      }} />
+    );
+  };
+
+  const MobileButton = ({ label, size = 50, round = false, color = '#00ff88', arrow = null, onTouchStart, onTouchEnd, onMouseDown, onMouseUp }) => (
     <div 
-      onClick={onClick}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
       style={{
         width: size,
         height: size,
-        backgroundColor: active ? color : 'rgba(0,30,15,0.9)',
+        backgroundColor: 'rgba(0,30,15,0.9)',
         border: `3px solid ${color}`,
-        borderRadius: '50%',
+        borderRadius: round ? '50%' : '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: round ? '12px' : '8px',
+        color: color,
+        boxShadow: `0 0 10px ${color}40, inset 0 0 20px rgba(0,0,0,0.5)`,
         cursor: 'pointer',
         userSelect: 'none',
-        boxShadow: active ? `0 0 20px ${color}` : '0 4px 0 #001a0a',
-        transition: 'all 0.1s ease',
-        transform: active ? 'translateY(2px)' : 'none'
+        touchAction: 'none'
       }}
     >
-      <span style={{
-        fontFamily: '"Press Start 2P", monospace',
-        fontSize: '14px',
-        color: active ? '#001a0a' : color,
-      }}>
-        {label}
-      </span>
+      {arrow ? <MobileArrow direction={arrow} color={color} /> : label}
     </div>
   );
-
-  const DPad = ({ onMove }) => {
-    const btnSize = 40;
-    const containerSize = 120;
-    
-    return (
-      <div style={{
-        width: containerSize,
-        height: containerSize,
-        position: 'relative',
-        backgroundColor: 'rgba(0,30,15,0.5)',
-        borderRadius: '10px',
-        border: '2px solid #00aa55'
-      }}>
-        {/* Up */}
-        <div 
-          onMouseDown={() => onMove('up', true)}
-          onMouseUp={() => onMove('up', false)}
-          onTouchStart={() => onMove('up', true)}
-          onTouchEnd={() => onMove('up', false)}
-          style={{
-            position: 'absolute',
-            top: 5,
-            left: (containerSize - btnSize) / 2,
-            width: btnSize,
-            height: btnSize,
-            backgroundColor: '#333',
-            border: '2px solid #00aa55',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div style={{ width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderBottom: '12px solid #00ff88' }} />
-        </div>
-        
-        {/* Down */}
-        <div 
-          onMouseDown={() => onMove('down', true)}
-          onMouseUp={() => onMove('down', false)}
-          onTouchStart={() => onMove('down', true)}
-          onTouchEnd={() => onMove('down', false)}
-          style={{
-            position: 'absolute',
-            bottom: 5,
-            left: (containerSize - btnSize) / 2,
-            width: btnSize,
-            height: btnSize,
-            backgroundColor: '#333',
-            border: '2px solid #00aa55',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div style={{ width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '12px solid #00ff88' }} />
-        </div>
-        
-        {/* Left */}
-        <div 
-          onMouseDown={() => onMove('left', true)}
-          onMouseUp={() => onMove('left', false)}
-          onTouchStart={() => onMove('left', true)}
-          onTouchEnd={() => onMove('left', false)}
-          style={{
-            position: 'absolute',
-            left: 5,
-            top: (containerSize - btnSize) / 2,
-            width: btnSize,
-            height: btnSize,
-            backgroundColor: '#333',
-            border: '2px solid #00aa55',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div style={{ width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: '12px solid #00ff88' }} />
-        </div>
-        
-        {/* Right */}
-        <div 
-          onMouseDown={() => onMove('right', true)}
-          onMouseUp={() => onMove('right', false)}
-          onTouchStart={() => onMove('right', true)}
-          onTouchEnd={() => onMove('right', false)}
-          style={{
-            position: 'absolute',
-            right: 5,
-            top: (containerSize - btnSize) / 2,
-            width: btnSize,
-            height: btnSize,
-            backgroundColor: '#333',
-            border: '2px solid #00aa55',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div style={{ width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderLeft: '12px solid #00ff88' }} />
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div style={{
@@ -163,7 +68,8 @@ const GameUI = ({
       padding: '20px',
       fontFamily: '"Press Start 2P", monospace',
       color: '#00ff88',
-      textShadow: '0 0 10px rgba(0,255,136,0.5)'
+      textShadow: '0 0 10px rgba(0,255,136,0.5)',
+      zIndex: 100
     }}>
       {/* HUD Top */}
       <div style={{
@@ -172,13 +78,13 @@ const GameUI = ({
         alignItems: 'flex-start'
       }}>
         <div style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px', border: '1px solid #00aa55' }}>
-          <div style={{ fontSize: '10px', marginBottom: '5px' }}>COINS</div>
-          <div style={{ fontSize: '18px' }}>{coins.toString().padStart(4, '0')}</div>
+          <div style={{ fontSize: '8px', marginBottom: '5px', color: '#00aa55' }}>COINS</div>
+          <div style={{ fontSize: '16px' }}>{coins.toString().padStart(4, '0')}</div>
         </div>
         
         <div style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px', border: '1px solid #00aa55', textAlign: 'right' }}>
-          <div style={{ fontSize: '10px', marginBottom: '5px' }}>SECURED</div>
-          <div style={{ fontSize: '18px' }}>{securedCoins.toString().padStart(4, '0')}</div>
+          <div style={{ fontSize: '8px', marginBottom: '5px', color: '#00aa55' }}>SECURED</div>
+          <div style={{ fontSize: '16px' }}>{securedCoins.toString().padStart(4, '0')}</div>
         </div>
       </div>
 
@@ -187,11 +93,11 @@ const GameUI = ({
         <div style={{
           alignSelf: 'center',
           backgroundColor: 'rgba(0,255,255,0.2)',
-          padding: '15px 30px',
+          padding: '10px 20px',
           border: '2px solid #00ffff',
           borderRadius: '5px',
           animation: 'pulse 1s infinite',
-          fontSize: '12px',
+          fontSize: '10px',
           color: '#00ffff'
         }}>
           DOCKING AVAILABLE
@@ -202,31 +108,112 @@ const GameUI = ({
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        pointerEvents: 'auto'
+        alignItems: 'center',
+        pointerEvents: 'auto',
+        padding: '0 10px 20px 10px'
       }}>
         {/* Left: D-Pad */}
-        <DPad onMove={onMove} />
+        <div style={{
+          position: 'relative',
+          width: '120px',
+          height: '120px',
+        }}>
+          <div style={{ position: 'absolute', top: '0', left: '50%', transform: 'translateX(-50%)' }}>
+            <MobileButton arrow="up" size={40} 
+              onTouchStart={() => onMove('up', true)} onTouchEnd={() => onMove('up', false)}
+              onMouseDown={() => onMove('up', true)} onMouseUp={() => onMove('up', false)}
+            />
+          </div>
+          <div style={{ position: 'absolute', bottom: '0', left: '50%', transform: 'translateX(-50%)' }}>
+            <MobileButton arrow="down" size={40} 
+              onTouchStart={() => onMove('down', true)} onTouchEnd={() => onMove('down', false)}
+              onMouseDown={() => onMove('down', true)} onMouseUp={() => onMove('down', false)}
+            />
+          </div>
+          <div style={{ position: 'absolute', left: '0', top: '50%', transform: 'translateY(-50%)' }}>
+            <MobileButton arrow="left" size={40} 
+              onTouchStart={() => onMove('left', true)} onTouchEnd={() => onMove('left', false)}
+              onMouseDown={() => onMove('left', true)} onMouseUp={() => onMove('left', false)}
+            />
+          </div>
+          <div style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)' }}>
+            <MobileButton arrow="right" size={40} 
+              onTouchStart={() => onMove('right', true)} onTouchEnd={() => onMove('right', false)}
+              onMouseDown={() => onMove('right', true)} onMouseUp={() => onMove('right', false)}
+            />
+          </div>
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '30px',
+            height: '30px',
+            backgroundColor: '#001a0a',
+            border: '2px solid #00aa55',
+          }} />
+        </div>
 
         {/* Center: Select/Start */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <div onClick={onSelect} style={{ textAlign: 'center', cursor: 'pointer' }}>
-            <div style={{ width: '40px', height: '12px', backgroundColor: '#555', borderRadius: '6px', border: '1px solid #777' }} />
-            <div style={{ fontSize: '6px', marginTop: '4px' }}>SELECT</div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          marginTop: '40px'
+        }}>
+          <div 
+            onClick={onSelect}
+            style={{
+              width: '50px',
+              height: '20px',
+              backgroundColor: 'rgba(0,30,15,0.9)',
+              border: '2px solid #00aa55',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: '5px',
+              color: '#00aa55',
+              cursor: 'pointer'
+            }}>
+            SELECT
           </div>
-          <div onClick={onStart} style={{ textAlign: 'center', cursor: 'pointer' }}>
-            <div style={{ width: '40px', height: '12px', backgroundColor: '#555', borderRadius: '6px', border: '1px solid #777' }} />
-            <div style={{ fontSize: '6px', marginTop: '4px' }}>START</div>
+          <div 
+            onClick={onStart}
+            style={{
+              width: '50px',
+              height: '20px',
+              backgroundColor: 'rgba(0,30,15,0.9)',
+              border: '2px solid #00aa55',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: '"Press Start 2P", monospace',
+              fontSize: '5px',
+              color: '#00aa55',
+              cursor: 'pointer'
+            }}>
+            START
           </div>
         </div>
 
-        {/* Right: A/B Buttons */}
-        <div style={{ display: 'flex', gap: '20px' }}>
+        {/* Right: Action Buttons */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '15px',
+        }}>
           <div style={{ marginTop: '30px' }}>
-            <MobileButton label="B" color="#ffd93d" onClick={onActionB} />
+            <MobileButton label="B" size={55} round color="#ffd93d" 
+              onTouchStart={onActionB} onMouseDown={onActionB}
+            />
           </div>
-          <div style={{ marginBottom: '30px' }}>
-            <MobileButton label="A" color="#ff6b6b" onClick={onActionA} />
+          <div style={{ marginTop: '-10px' }}>
+            <MobileButton label="A" size={55} round color="#ff6b6b" 
+              onTouchStart={onActionA} onMouseDown={onActionA}
+            />
           </div>
         </div>
       </div>
