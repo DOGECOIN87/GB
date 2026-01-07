@@ -66,6 +66,9 @@ export default function GorboyGame() {
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
       
+      // Rotate 45 degrees to the right (clockwise around Y axis)
+      model.rotation.y = -Math.PI / 4;
+      
       engine.addToScene(model);
       player = new PlayerShip(engine, model);
     });
