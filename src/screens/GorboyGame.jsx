@@ -10,7 +10,7 @@ export default function GorboyGame() {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const [landscape, setLandscape] = useState(false);
-  
+
   // Game State
   const [gameState, setGameState] = useState({
     coins: 0,
@@ -50,13 +50,16 @@ export default function GorboyGame() {
 
     const coinSystem = new CoinSystem(engine);
     engine.addSystem('coins', coinSystem);
-    
+
     const dockingSystem = new DockingSystem(engine);
     engine.addSystem('docking', dockingSystem);
 
     // Load Player Ship
     let player;
     engine.loadModel('3d-model.glb').then(model => {
+      // Create a group to handle orientation offsets
+      const shipGroup = new THREE.Group();
+
       // Center and scale model
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
@@ -65,18 +68,20 @@ export default function GorboyGame() {
       const scale = 2.5 / maxDim;
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-      
-      // Rotate 45 degrees to the right (clockwise around Y axis)
-      model.rotation.y = -Math.PI / 4;
-      
-      engine.addToScene(model);
-      player = new PlayerShip(engine, model);
+
+      // Rotate model within group to face forward (-Z)
+      // The model appears to face -X by default, so rotate 90deg CW
+      model.rotation.y = -Math.PI / 2;
+
+      shipGroup.add(model);
+      engine.addToScene(shipGroup);
+      player = new PlayerShip(engine, shipGroup);
     });
 
     // Game Loop Update
     engine.onUpdate = (deltaTime) => {
       if (player) player.update(deltaTime);
-      
+
       if (input.isKeyDown('Space')) {
         if (player && player.model) {
           laserSystem.fire(player.model.position);
@@ -97,10 +102,10 @@ export default function GorboyGame() {
     };
 
     dockingSystem.onDockingComplete = () => {
-      setGameState(prev => ({ 
-        ...prev, 
+      setGameState(prev => ({
+        ...prev,
         securedCoins: prev.securedCoins + prev.coins,
-        coins: 0 
+        coins: 0
       }));
     };
 
@@ -115,14 +120,14 @@ export default function GorboyGame() {
   const handleMove = (direction, active) => {
     const input = engineRef.current?.getSystem('input');
     if (!input) return;
-    
+
     const keyMap = {
       up: 'ArrowUp',
       down: 'ArrowDown',
       left: 'ArrowLeft',
       right: 'ArrowRight'
     };
-    
+
     input.keys[keyMap[direction]] = active;
   };
 
@@ -225,8 +230,8 @@ export default function GorboyGame() {
     return (
       <div className="w-full h-screen bg-black relative overflow-hidden">
         <canvas ref={canvasRef} className="w-full h-full" />
-        
-        <GameUI 
+
+        <GameUI
           coins={gameState.coins}
           securedCoins={gameState.securedCoins}
           isDockingAvailable={gameState.isDockingAvailable}
@@ -234,7 +239,7 @@ export default function GorboyGame() {
           onActionA={handleActionA}
           onActionB={handleActionB}
           onStart={handleStart}
-          onSelect={() => {}}
+          onSelect={() => { }}
         />
 
         {gameState.isPaused && (
