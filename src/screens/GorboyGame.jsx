@@ -5,8 +5,9 @@ import { GameEngine, InputManager, PlayerShip, LaserSystem, CoinSystem, DockingS
 import GameUI from '../components/GameUI';
 
 export default function GorboyGame() {
-  const [screen, setScreen] = useState('intro');
+  const [screen, setScreen] = useState('loading');
   const [introPhase, setIntroPhase] = useState('black');
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const playerRef = useRef(null);
@@ -33,6 +34,28 @@ export default function GorboyGame() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Loading screen with 8-second minimum display
+  useEffect(() => {
+    if (screen !== 'loading') return;
+
+    const loadingTimer = setInterval(() => {
+      setLoadingProgress(prev => Math.min(prev + Math.random() * 40, 95));
+    }, 300);
+
+    const minDisplayTime = 8000; // 8 seconds minimum
+    const transitionTimer = setTimeout(() => {
+      setLoadingProgress(100);
+      setTimeout(() => {
+        setScreen('intro');
+      }, 300);
+    }, minDisplayTime);
+
+    return () => {
+      clearInterval(loadingTimer);
+      clearTimeout(transitionTimer);
+    };
+  }, [screen]);
 
   // Initialize Game Engine when entering game screen
   useEffect(() => {
@@ -207,6 +230,39 @@ export default function GorboyGame() {
       </svg>
     </button>
   );
+
+  if (screen === 'loading') {
+    return (
+      <div className="w-full h-screen bg-black flex flex-col items-center justify-center font-mono">
+        <style>{`
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        `}</style>
+        <div className="mb-16 w-full max-w-[95vw] max-h-[80vh] aspect-square flex items-center justify-center">
+          <CircularLogo />
+        </div>
+        <div className="relative w-48 h-2 bg-lime-400/20 rounded-full overflow-hidden border border-lime-400/40">
+          <div 
+            className="h-full bg-gradient-to-r from-lime-400 to-lime-300 rounded-full transition-all duration-300"
+            style={{ width: `${loadingProgress}%` }}
+          />
+        </div>
+        <div className="mt-8 flex gap-2 justify-center">
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="w-2 h-2 bg-lime-400 rounded-full"
+              style={{
+                animation: 'pulse 0.8s ease-in-out infinite',
+                animationDelay: `${i * 0.2}s`
+              }}
+            />
+          ))}
+        </div>
+        <p className="mt-8 text-lime-400/60 text-xs tracking-widest">LOADING GAME...</p>
+      </div>
+    );
+  }
 
   if (screen === 'intro') {
     return (
