@@ -9,7 +9,7 @@ export class LaserSystem {
     this.engine = engine;
     this.lasers = [];
     this.pool = [];
-    this.maxLasers = 20;
+    this.maxLasers = 40; // Doubled for double laser support
     this.fireRate = 0.2; // seconds between shots
     this.fireTimer = 0;
     
@@ -18,6 +18,13 @@ export class LaserSystem {
       color: 0x00ff88,
       transparent: true,
       opacity: 0.8
+    });
+
+    // Glow effect for lasers
+    this.glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ff88,
+      transparent: true,
+      opacity: 0.4
     });
   }
 
@@ -51,25 +58,46 @@ export class LaserSystem {
     }
   }
 
-  fire(position) {
+  fire(position, quaternion) {
     if (this.fireTimer > 0) return;
     
-    const laser = this.pool.find(l => !l.visible);
+    // Fire two lasers from slightly offset positions (double lasers)
+    const leftOffset = new THREE.Vector3(-0.8, 0, 0);
+    const rightOffset = new THREE.Vector3(0.8, 0, 0);
+
+    // Apply ship rotation to offsets if quaternion provided
+    if (quaternion) {
+      leftOffset.applyQuaternion(quaternion);
+      rightOffset.applyQuaternion(quaternion);
+    }
+
+    // Left laser
+    let laser = this.pool.find(l => !l.visible);
     if (laser) {
-      laser.position.copy(position);
+      laser.position.copy(position).add(leftOffset);
       laser.visible = true;
       this.lasers.push(laser);
-      this.fireTimer = this.fireRate;
-      
-      // Add muzzle flash effect (simplified)
-      console.log('Laser fired!');
     }
+
+    // Right laser
+    laser = this.pool.find(l => !l.visible);
+    if (laser) {
+      laser.position.copy(position).add(rightOffset);
+      laser.visible = true;
+      this.lasers.push(laser);
+    }
+
+    this.fireTimer = this.fireRate;
   }
 
   removeLaser(index) {
     const laser = this.lasers[index];
     laser.visible = false;
     this.lasers.splice(index, 1);
+  }
+
+  getLasers() {
+    return this.lasers;
   }
 
   dispose() {

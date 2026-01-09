@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import Galaxy from './Galaxy';
-import { GameEngine, InputManager, PlayerShip, LaserSystem, CoinSystem, DockingSystem } from '../game';
+import { GameEngine, InputManager, PlayerShip, LaserSystem, CoinSystem, DockingSystem, AsteroidSystem, StarField } from '../game';
 import GameUI from '../components/GameUI';
 
 export default function GorboyGame() {
@@ -55,6 +55,13 @@ export default function GorboyGame() {
     const dockingSystem = new DockingSystem(engine);
     engine.addSystem('docking', dockingSystem);
 
+    const asteroidSystem = new AsteroidSystem(engine);
+    // Temporarily disabled to debug freeze issue
+    // engine.addSystem('asteroids', asteroidSystem);
+
+    const starField = new StarField(engine);
+    engine.addSystem('starfield', starField);
+
     // Load Player Ship
     let player;
     engine.loadModel('/3d-model.glb').then(model => {
@@ -93,7 +100,19 @@ export default function GorboyGame() {
 
       if (input.isKeyDown('Space')) {
         if (player && player.model) {
-          laserSystem.fire(player.model.position);
+          laserSystem.fire(player.model.position, player.model.quaternion);
+        }
+      }
+
+      // Check laser-asteroid collisions
+      const asteroids = asteroidSystem.getAsteroids();
+      const lasers = laserSystem.getLasers();
+      
+      if (asteroids.length > 0 && lasers.length > 0) {
+        const collision = asteroidSystem.checkCollisions(lasers);
+        if (collision && collision.laserIndex >= 0 && collision.laserIndex < lasers.length) {
+          // Remove the laser that hit
+          laserSystem.removeLaser(collision.laserIndex);
         }
       }
     };

@@ -8,4 +8,5 @@ export { InputManager } from './InputManager';
 export { PlayerShip } from './PlayerShip';
 export { LaserSystem } from './LaserSystem';
 export { CoinSystem } from './CoinSystem';
-export { DockingSystem } from './DockingSystem';
+export { DockingSystem } from './DockingSystem';export { AsteroidSystem } from './AsteroidSystem';
+export { StarField } from './StarField';
