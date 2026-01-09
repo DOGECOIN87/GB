@@ -206,13 +206,15 @@ const GameUI = ({
           gap: '15px',
         }}>
           <div style={{ marginTop: '30px' }}>
-            <MobileButton label="B" size={55} round color="#ffd93d" 
-              onTouchStart={onActionB} onMouseDown={onActionB}
+            <MobileButton label="B" size={55} round color="#ffd93d"
+              onTouchStart={onActionB} onTouchEnd={() => {}}
+              onMouseDown={onActionB} onMouseUp={() => {}}
             />
           </div>
           <div style={{ marginTop: '-10px' }}>
-            <MobileButton label="A" size={55} round color="#ff6b6b" 
-              onTouchStart={onActionA} onMouseDown={onActionA}
+            <MobileButton label="A" size={55} round color="#ff6b6b"
+              onTouchStart={onActionA} onTouchEnd={() => {}}
+              onMouseDown={onActionA} onMouseUp={() => {}}
             />
           </div>
         </div>

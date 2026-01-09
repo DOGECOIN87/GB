@@ -12,23 +12,28 @@ export class CoinSystem {
     this.maxCoins = 10;
     this.spawnInterval = 2.0;
     this.spawnTimer = 0;
-    
+    this.playerShip = null; // Store player reference
+
     this.bounds = {
       x: 18,
       y: 13,
       z: -50 // Spawn distance
     };
-    
+
     this.coinGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-    this.coinMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xffd700, 
-      metalness: 0.8, 
+    this.coinMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      metalness: 0.8,
       roughness: 0.2,
       emissive: 0xffd700,
       emissiveIntensity: 0.2
     });
-    
+
     this.onCoinCollected = null;
+  }
+
+  setPlayer(playerShip) {
+    this.playerShip = playerShip;
   }
 
   init() {
@@ -42,7 +47,7 @@ export class CoinSystem {
     }
   }
 
-  update(deltaTime, playerShip) {
+  update(deltaTime) {
     this.spawnTimer += deltaTime;
     if (this.spawnTimer >= this.spawnInterval && this.coins.length < this.maxCoins) {
       this.spawnCoin();
@@ -52,22 +57,22 @@ export class CoinSystem {
     // Update existing coins
     for (let i = this.coins.length - 1; i >= 0; i--) {
       const coin = this.coins[i];
-      
+
       // Rotate coin
       coin.rotation.z += deltaTime * 3;
-      
+
       // Move coin towards player (scrolling effect)
       coin.position.z += deltaTime * 10;
-      
+
       // Check for collection
-      if (playerShip && playerShip.model) {
-        const distance = coin.position.distanceTo(playerShip.model.position);
+      if (this.playerShip && this.playerShip.model) {
+        const distance = coin.position.distanceTo(this.playerShip.model.position);
         if (distance < 1.5) {
           this.collectCoin(i);
           continue;
         }
       }
-      
+
       // Remove if passed player
       if (coin.position.z > 10) {
         this.removeCoin(i);

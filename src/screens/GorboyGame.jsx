@@ -9,6 +9,7 @@ export default function GorboyGame() {
   const [introPhase, setIntroPhase] = useState('black');
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
+  const playerRef = useRef(null);
   const [landscape, setLandscape] = useState(false);
 
   // Game State
@@ -56,7 +57,7 @@ export default function GorboyGame() {
 
     // Load Player Ship
     let player;
-    engine.loadModel('3d-model.glb').then(model => {
+    engine.loadModel('/3d-model.glb').then(model => {
       // Create a group to handle orientation offsets
       const shipGroup = new THREE.Group();
 
@@ -76,9 +77,17 @@ export default function GorboyGame() {
       shipGroup.add(model);
       engine.addToScene(shipGroup);
       player = new PlayerShip(engine, shipGroup);
+      playerRef.current = player;
+
+      // Set player reference on systems that need it
+      coinSystem.setPlayer(player);
+      dockingSystem.setPlayer(player);
+    }).catch(err => {
+      console.error('Failed to load 3D model:', err);
     });
 
-    // Game Loop Update
+    // Game Loop Update - only handle player and firing logic
+    // CoinSystem and DockingSystem are updated by the engine via addSystem()
     engine.onUpdate = (deltaTime) => {
       if (player) player.update(deltaTime);
 
@@ -87,9 +96,6 @@ export default function GorboyGame() {
           laserSystem.fire(player.model.position);
         }
       }
-
-      coinSystem.update(deltaTime, player);
-      dockingSystem.update(deltaTime, player);
     };
 
     // Callbacks
@@ -114,6 +120,7 @@ export default function GorboyGame() {
     return () => {
       engine.dispose();
       engineRef.current = null;
+      playerRef.current = null;
     };
   }, [screen]);
 
@@ -141,11 +148,9 @@ export default function GorboyGame() {
   };
 
   const handleActionB = () => {
-    // Barrel roll?
-    const input = engineRef.current?.getSystem('input');
-    if (input) {
-      // Simulate double tap or just trigger roll
-      // For now, let's just say B is a special action
+    // Trigger barrel roll
+    if (playerRef.current) {
+      playerRef.current.triggerBarrelRoll();
     }
   };
 
@@ -157,11 +162,11 @@ export default function GorboyGame() {
   };
 
   const CircularLogo = () => (
-    <img src="infographic-.png" className="w-full h-full" alt="Infographic" />
+    <img src="/infographic-.png" className="w-full h-full" alt="Infographic" />
   );
 
   const SquareLogo = () => (
-    <img src="square-logo.webp" className="w-full h-full object-contain" alt="Square Logo" />
+    <img src="/square-logo.webp" className="w-full h-full object-contain" alt="Square Logo" />
   );
 
   const MetallicButton = ({ text, onClick, className = "" }) => (

@@ -32,7 +32,7 @@ export class LaserSystem {
     }
   }
 
-  update(deltaTime, playerShip) {
+  update(deltaTime) {
     if (this.fireTimer > 0) {
       this.fireTimer -= deltaTime;
     }
@@ -40,10 +40,10 @@ export class LaserSystem {
     // Update existing lasers
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const laser = this.lasers[i];
-      
+
       // Move laser forward
       laser.position.z -= deltaTime * 50;
-      
+
       // Remove if too far
       if (laser.position.z < -100) {
         this.removeLaser(i);

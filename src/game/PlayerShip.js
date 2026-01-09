@@ -46,11 +46,19 @@ export class PlayerShip {
   }
 
   startBarrelRoll(direction) {
-    if (this.isRolling || this.rollCooldown > 0) return;
-    
+    if (this.isRolling || this.rollCooldown > 0) return false;
+
     this.isRolling = true;
     this.rollDirection = direction;
     this.rollProgress = 0;
+    return true;
+  }
+
+  // Trigger barrel roll in a random direction (for B button)
+  triggerBarrelRoll() {
+    // Alternate direction based on velocity or just pick one
+    const direction = this.velocity.x >= 0 ? 1 : -1;
+    return this.startBarrelRoll(direction);
   }
 
   update(deltaTime) {
@@ -66,8 +74,10 @@ export class PlayerShip {
   }
 
   _handleMovement(deltaTime) {
+    if (!this.input) return;
+
     const moveForce = new THREE.Vector3();
-    
+
     if (this.input.isKeyDown('KeyW') || this.input.isKeyDown('ArrowUp')) moveForce.y += 1;
     if (this.input.isKeyDown('KeyS') || this.input.isKeyDown('ArrowDown')) moveForce.y -= 1;
     if (this.input.isKeyDown('KeyA') || this.input.isKeyDown('ArrowLeft')) moveForce.x -= 1;
@@ -88,7 +98,7 @@ export class PlayerShip {
   }
 
   _handleRotation(deltaTime) {
-    if (!this.model) return;
+    if (!this.model || !this.input) return;
 
     // Target rotation based on mouse position
     const targetRotX = -this.input.mouse.y * 0.5;

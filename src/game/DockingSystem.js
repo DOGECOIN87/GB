@@ -11,18 +11,23 @@ export class DockingSystem {
     this.dockingRange = 3.0;
     this.spawnInterval = 15.0; // Less frequent than coins
     this.spawnTimer = 0;
-    
+    this.playerShip = null; // Store player reference
+
     this.stationGeometry = new THREE.TorusGeometry(2, 0.2, 16, 100);
-    this.stationMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x00ffff, 
+    this.stationMaterial = new THREE.MeshStandardMaterial({
+      color: 0x00ffff,
       emissive: 0x00ffff,
       emissiveIntensity: 0.5,
       transparent: true,
       opacity: 0.7
     });
-    
+
     this.onDockingPossible = null;
     this.onDockingComplete = null;
+  }
+
+  setPlayer(playerShip) {
+    this.playerShip = playerShip;
   }
 
   init() {
@@ -30,7 +35,7 @@ export class DockingSystem {
     this.spawnTimer = 10; 
   }
 
-  update(deltaTime, playerShip) {
+  update(deltaTime) {
     this.spawnTimer += deltaTime;
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnStation();
@@ -41,17 +46,17 @@ export class DockingSystem {
 
     for (let i = this.stations.length - 1; i >= 0; i--) {
       const station = this.stations[i];
-      
+
       // Move station towards player
       station.position.z += deltaTime * 8;
       station.rotation.z += deltaTime * 0.5;
-      
+
       // Check for docking proximity
-      if (playerShip && playerShip.model) {
-        const distance = station.position.distanceTo(playerShip.model.position);
+      if (this.playerShip && this.playerShip.model) {
+        const distance = station.position.distanceTo(this.playerShip.model.position);
         if (distance < this.dockingRange) {
           dockingAvailable = true;
-          
+
           // Auto-dock if close enough or if player presses a key (simplified to auto-dock for now)
           if (distance < 1.0) {
             this.completeDocking(i);
@@ -59,7 +64,7 @@ export class DockingSystem {
           }
         }
       }
-      
+
       // Remove if passed player
       if (station.position.z > 10) {
         this.removeStation(i);
