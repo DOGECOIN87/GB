@@ -2,19 +2,24 @@ import * as THREE from 'three';
 
 /**
  * AsteroidSystem - Manages asteroids with glowing crystals that can be destroyed
+ * Fixed memory leaks and improved particle management
  */
 export class AsteroidSystem {
   constructor(engine) {
     this.engine = engine;
     this.asteroids = [];
-    this.crystals = [];
     this.explosions = [];
     this.pool = [];
-    this.maxAsteroids = 8;
-    this.spawnRate = 0.8; // seconds between spawns
-    this.spawnTimer = 0.5; // Start spawning after 0.5 seconds
+    this.maxAsteroids = 6;
+    this.spawnRate = 1.5; // seconds between spawns
+    this.spawnTimer = 1.0; // Start spawning after 1 second
+    this.player = null;
 
-    // Asteroid geometry and materials
+    // Callbacks
+    this.onAsteroidDestroyed = null;
+    this.onPlayerHit = null;
+
+    // Asteroid geometry and materials (shared)
     this.asteroidGeometry = new THREE.DodecahedronGeometry(0.8, 1);
     this.asteroidMaterial = new THREE.MeshStandardMaterial({
       color: 0x666666,
@@ -23,7 +28,7 @@ export class AsteroidSystem {
       roughness: 0.8
     });
 
-    // Crystal geometry and material
+    // Crystal geometry and material (shared)
     this.crystalGeometry = new THREE.TetrahedronGeometry(0.3, 0);
     this.crystalMaterial = new THREE.MeshStandardMaterial({
       color: 0x00ff88,
@@ -32,11 +37,26 @@ export class AsteroidSystem {
       metalness: 0.8,
       roughness: 0.2
     });
+
+    // Shared particle geometry and material for explosions (reusable)
+    this.particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+    this.particleMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ff88,
+      transparent: true,
+      opacity: 1
+    });
+
+    // Particle pool for explosions
+    this.particlePool = [];
+    this.maxParticles = 60; // 5 explosions * 12 particles each
+  }
+
+  setPlayer(player) {
+    this.player = player;
   }
 
   init() {
-    // Pre-populate pool
-    console.log('AsteroidSystem init starting, creating', this.maxAsteroids, 'asteroids');
+    // Pre-populate asteroid pool
     for (let i = 0; i < this.maxAsteroids; i++) {
       const asteroidMesh = new THREE.Mesh(this.asteroidGeometry, this.asteroidMaterial);
       asteroidMesh.visible = false;
@@ -53,7 +73,6 @@ export class AsteroidSystem {
       this.pool.push({
         asteroid: asteroidMesh,
         crystal: crystalMesh,
-        crystalMaterial: this.crystalMaterial,
         active: false,
         health: 1,
         position: new THREE.Vector3(),
@@ -64,10 +83,20 @@ export class AsteroidSystem {
         crystalRotationSpeed: new THREE.Vector3()
       });
     }
-    console.log('AsteroidSystem init complete, pool size:', this.pool.length);
+
+    // Pre-populate particle pool
+    for (let i = 0; i < this.maxParticles; i++) {
+      const particle = new THREE.Mesh(this.particleGeometry, this.particleMaterial.clone());
+      particle.visible = false;
+      particle.userData.velocity = new THREE.Vector3();
+      particle.userData.active = false;
+      this.engine.addToScene(particle);
+      this.particlePool.push(particle);
+    }
   }
 
   update(deltaTime) {
+    // Spawn new asteroids
     this.spawnTimer += deltaTime;
     if (this.spawnTimer >= this.spawnRate && this.asteroids.length < this.maxAsteroids) {
       this.spawnAsteroid();
@@ -101,6 +130,21 @@ export class AsteroidSystem {
       const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.003);
       this.crystalMaterial.emissiveIntensity = 0.5 * pulse;
 
+      // Check player collision
+      if (this.player && this.player.model) {
+        const playerPos = this.player.model.position;
+        const distance = asteroid.position.distanceTo(playerPos);
+        if (distance < 1.8) {
+          // Player hit!
+          if (this.onPlayerHit) {
+            this.onPlayerHit();
+          }
+          this.createExplosion(asteroid.position.clone());
+          this.removeAsteroid(i);
+          continue;
+        }
+      }
+
       // Remove if too far away
       if (asteroid.position.z < -25 || 
           Math.abs(asteroid.position.x) > 30 || 
@@ -115,15 +159,21 @@ export class AsteroidSystem {
       exp.lifetime -= deltaTime;
       
       if (exp.lifetime <= 0) {
+        // Return particles to pool
+        for (const particle of exp.particles) {
+          particle.visible = false;
+          particle.userData.active = false;
+        }
         this.explosions.splice(i, 1);
         continue;
       }
 
       // Update particles
+      const alpha = exp.lifetime / exp.maxLifetime;
       for (const particle of exp.particles) {
-        particle.position.add(particle.velocity.clone().multiplyScalar(deltaTime));
-        particle.scale.multiplyScalar(0.95); // Shrink particles
-        particle.material.opacity -= deltaTime * 2;
+        particle.position.add(particle.userData.velocity.clone().multiplyScalar(deltaTime));
+        particle.scale.setScalar(alpha * 0.5);
+        particle.material.opacity = alpha;
       }
     }
   }
@@ -135,37 +185,35 @@ export class AsteroidSystem {
     available.active = true;
     available.health = 1;
     
-    console.log('Spawning asteroid, pool active:', this.asteroids.length);
     // Random spawn position (off-screen, coming toward player)
     const side = Math.random();
     let x, y;
     if (side < 0.25) { // Top
-      x = (Math.random() - 0.5) * 40;
-      y = 20;
+      x = (Math.random() - 0.5) * 30;
+      y = 18;
     } else if (side < 0.5) { // Bottom
-      x = (Math.random() - 0.5) * 40;
-      y = -20;
+      x = (Math.random() - 0.5) * 30;
+      y = -18;
     } else if (side < 0.75) { // Left
-      x = -25;
-      y = (Math.random() - 0.5) * 30;
+      x = -22;
+      y = (Math.random() - 0.5) * 25;
     } else { // Right
-      x = 25;
-      y = (Math.random() - 0.5) * 30;
+      x = 22;
+      y = (Math.random() - 0.5) * 25;
     }
 
-    available.position.set(x, y, 5 + Math.random() * 25);
+    available.position.set(x, y, 5 + Math.random() * 20);
     available.asteroid.position.copy(available.position);
     available.crystal.position.copy(available.position);
     available.asteroid.visible = true;
     available.crystal.visible = true;
 
-    // Velocity toward player with some randomness
-    const speed = 3 + Math.random() * 2;
-    available.velocity.set(
-      (Math.random() - 0.5) * 4,
-      (Math.random() - 0.5) * 3,
-      -speed
-    );
+    // Velocity toward center/player with some randomness
+    const targetX = (Math.random() - 0.5) * 10;
+    const targetY = (Math.random() - 0.5) * 8;
+    const direction = new THREE.Vector3(targetX - x, targetY - y, -15).normalize();
+    const speed = 4 + Math.random() * 3;
+    available.velocity.copy(direction).multiplyScalar(speed);
 
     // Rotation speeds
     available.rotationSpeed.set(
@@ -184,61 +232,65 @@ export class AsteroidSystem {
   }
 
   checkCollisions(lasers) {
-    const laserRange = 0.5;
-    const collisions = [];
-    
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
       const asteroid = this.asteroids[i];
       
       for (let j = lasers.length - 1; j >= 0; j--) {
         const laser = lasers[j];
         
-        if (!laser.visible) continue; // Skip invisible lasers
+        if (!laser.visible) continue;
         
         const distance = asteroid.position.distanceTo(laser.position);
         if (distance < 1.5) {
           // Hit! Create explosion and remove asteroid
-          this.createExplosion(asteroid.position);
+          this.createExplosion(asteroid.position.clone());
           this.removeAsteroid(i);
-          collisions.push({ asteroidIndex: i, laserIndex: j });
-          break; // Only one hit per asteroid per frame
+          
+          if (this.onAsteroidDestroyed) {
+            this.onAsteroidDestroyed();
+          }
+          
+          return { asteroidIndex: i, laserIndex: j };
         }
       }
     }
     
-    return collisions.length > 0 ? collisions[0] : null;
+    return null;
   }
 
   createExplosion(position) {
-    const particleCount = 12;
+    const particleCount = 10;
     const particles = [];
-    const particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x00ff88,
-      transparent: true,
-      opacity: 1
-    });
 
     for (let i = 0; i < particleCount; i++) {
-      const particle = new THREE.Mesh(particleGeometry, material);
+      // Get particle from pool
+      const particle = this.particlePool.find(p => !p.userData.active);
+      if (!particle) continue;
+
+      particle.userData.active = true;
+      particle.visible = true;
       particle.position.copy(position);
+      particle.scale.setScalar(0.5);
+      particle.material.opacity = 1;
       
       const angle = (i / particleCount) * Math.PI * 2;
-      const speed = 10 + Math.random() * 5;
-      particle.velocity = new THREE.Vector3(
+      const speed = 8 + Math.random() * 4;
+      particle.userData.velocity.set(
         Math.cos(angle) * speed,
-        Math.sin(angle) * speed + Math.random() * 5,
-        -Math.random() * 5
+        Math.sin(angle) * speed + Math.random() * 3,
+        -Math.random() * 3
       );
 
-      this.engine.addToScene(particle);
       particles.push(particle);
     }
 
-    this.explosions.push({
-      particles,
-      lifetime: 0.8
-    });
+    if (particles.length > 0) {
+      this.explosions.push({
+        particles,
+        lifetime: 0.6,
+        maxLifetime: 0.6
+      });
+    }
   }
 
   removeAsteroid(index) {
@@ -260,8 +312,20 @@ export class AsteroidSystem {
     this.asteroidMaterial.dispose();
     this.crystalGeometry.dispose();
     this.crystalMaterial.dispose();
+    this.particleGeometry.dispose();
+    this.particleMaterial.dispose();
+    
+    // Dispose cloned particle materials
+    for (const particle of this.particlePool) {
+      if (particle.material) {
+        particle.material.dispose();
+      }
+    }
+    
     this.asteroids = [];
     this.pool = [];
+    this.particlePool = [];
+    this.explosions = [];
   }
 }
 

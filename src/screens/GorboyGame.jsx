@@ -3,8 +3,10 @@ import * as THREE from 'three';
 import Galaxy from './Galaxy';
 import { GameEngine, InputManager, PlayerShip, LaserSystem, CoinSystem, DockingSystem, AsteroidSystem, StarField } from '../game';
 import GameUI from '../components/GameUI';
+import { useNavigate } from 'react-router-dom';
 
 export default function GorboyGame() {
+  const navigate = useNavigate();
   const [screen, setScreen] = useState('loading');
   const [introPhase, setIntroPhase] = useState('black');
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -18,7 +20,10 @@ export default function GorboyGame() {
     coins: 0,
     securedCoins: 0,
     isDockingAvailable: false,
-    isPaused: false
+    isPaused: false,
+    health: 3,
+    score: 0,
+    isGameOver: false
   });
 
   useEffect(() => {
@@ -61,6 +66,17 @@ export default function GorboyGame() {
   useEffect(() => {
     if (screen !== 'game' || !canvasRef.current) return;
 
+    // Reset game state when starting
+    setGameState({
+      coins: 0,
+      securedCoins: 0,
+      isDockingAvailable: false,
+      isPaused: false,
+      health: 3,
+      score: 0,
+      isGameOver: false
+    });
+
     const engine = new GameEngine(canvasRef.current);
     engine.initialize();
     engineRef.current = engine;
@@ -79,8 +95,7 @@ export default function GorboyGame() {
     engine.addSystem('docking', dockingSystem);
 
     const asteroidSystem = new AsteroidSystem(engine);
-    // Temporarily disabled to debug freeze issue
-    // engine.addSystem('asteroids', asteroidSystem);
+    engine.addSystem('asteroids', asteroidSystem);
 
     const starField = new StarField(engine);
     engine.addSystem('starfield', starField);
@@ -112,6 +127,7 @@ export default function GorboyGame() {
       // Set player reference on systems that need it
       coinSystem.setPlayer(player);
       dockingSystem.setPlayer(player);
+      asteroidSystem.setPlayer(player);
     }).catch(err => {
       console.error('Failed to load 3D model:', err);
     });
@@ -142,7 +158,11 @@ export default function GorboyGame() {
 
     // Callbacks
     coinSystem.onCoinCollected = () => {
-      setGameState(prev => ({ ...prev, coins: prev.coins + 1 }));
+      setGameState(prev => ({ 
+        ...prev, 
+        coins: prev.coins + 1,
+        score: prev.score + 100
+      }));
     };
 
     dockingSystem.onDockingPossible = (available) => {
@@ -153,8 +173,30 @@ export default function GorboyGame() {
       setGameState(prev => ({
         ...prev,
         securedCoins: prev.securedCoins + prev.coins,
+        score: prev.score + prev.coins * 50,
         coins: 0
       }));
+    };
+
+    asteroidSystem.onAsteroidDestroyed = () => {
+      setGameState(prev => ({
+        ...prev,
+        score: prev.score + 250
+      }));
+    };
+
+    asteroidSystem.onPlayerHit = () => {
+      setGameState(prev => {
+        const newHealth = prev.health - 1;
+        if (newHealth <= 0) {
+          // Game Over
+          setTimeout(() => {
+            navigate('/gameover');
+          }, 500);
+          return { ...prev, health: 0, isGameOver: true };
+        }
+        return { ...prev, health: newHealth };
+      });
     };
 
     engine.start();
@@ -164,7 +206,7 @@ export default function GorboyGame() {
       engineRef.current = null;
       playerRef.current = null;
     };
-  }, [screen]);
+  }, [screen, navigate]);
 
   const handleMove = (direction, active) => {
     const input = engineRef.current?.getSystem('input');
@@ -311,6 +353,27 @@ export default function GorboyGame() {
       <div className="w-full h-screen bg-black relative overflow-hidden">
         <canvas ref={canvasRef} className="w-full h-full" />
 
+        {/* Health Display */}
+        <div className="absolute top-4 left-4 flex gap-2 z-40">
+          {[...Array(3)].map((_, i) => (
+            <div 
+              key={i}
+              className={`w-6 h-6 rounded-full border-2 ${
+                i < gameState.health 
+                  ? 'bg-lime-400 border-lime-400' 
+                  : 'bg-transparent border-lime-400/30'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Score Display */}
+        <div className="absolute top-4 right-4 z-40">
+          <div className="text-lime-400 font-mono text-lg">
+            SCORE: {gameState.score.toString().padStart(6, '0')}
+          </div>
+        </div>
+
         <GameUI
           coins={gameState.coins}
           securedCoins={gameState.securedCoins}
@@ -325,6 +388,12 @@ export default function GorboyGame() {
         {gameState.isPaused && (
           <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
             <div className="text-lime-400 text-4xl font-mono animate-pulse">PAUSED</div>
+          </div>
+        )}
+
+        {gameState.isGameOver && (
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div className="text-red-500 text-4xl font-mono animate-pulse">GAME OVER</div>
           </div>
         )}
       </div>

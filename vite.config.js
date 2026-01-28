@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     open: true,
     host: '0.0.0.0',
-    allowedHosts: 'all',
+    allowedHosts: ['.manus.computer', 'localhost'],
   },
   build: {
     outDir: 'dist',
